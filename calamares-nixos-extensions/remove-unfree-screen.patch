@@ -1,0 +1,25 @@
+diff --git a/config/settings.conf b/config/settings.conf
+index 9af775a..f84c270 100644
+--- a/config/settings.conf
++++ b/config/settings.conf
+@@ -119,7 +119,6 @@ sequence:
+   - keyboard
+   - users
+   - packagechooser
+-  - packagechooserq@unfree
+   - partition
+   - summary
+ - exec:
+diff --git a/modules/nixos/main.py b/modules/nixos/main.py
+index 9903de8..4b99e90 100644
+--- a/modules/nixos/main.py
++++ b/modules/nixos/main.py
+@@ -699,7 +699,7 @@ def run():
+         cfg += cfgfirefox
+ 
+     # Check if unfree packages are allowed
+-    free = True
++    free = False
+     if gs.value("packagechooser_unfree") is not None:
+         if gs.value("packagechooser_unfree") == "unfree":
+             free = False
