@@ -48,6 +48,7 @@
           imports = [
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-graphical-calamares.nix"
             "${nixbook}/common.nix"
+            ./broadcom-sta.nix
           ];
           nix.extraOptions = "experimental-features = nix-command flakes";
           isoImage.isoName = "nixos-custom-installer.iso";
