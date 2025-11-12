@@ -17,10 +17,6 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v12
 
-      # Optional: Enable magic nix cache for faster builds
-      - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@v8
-
       # Verify Nix is working
       - name: Verify Nix installation
         run: nix --version
