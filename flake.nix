@@ -38,10 +38,16 @@
             })
           ];
         };
+        nixbook = pkgs.fetchFromGitHub {
+          owner = "ChocolateLoverRaj";
+          repo = "nixbook";
+          rev = "262a3796b9ef2420b840f65b504794826b62a369";
+          hash = "sha256-Z0jlc8VImgc3L9P34j7/z1zMtfSJmRzGXQOU4Zg4jBA=";
+        };
         liveInstallerModule = {
           imports = [
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-graphical-calamares.nix"
-            ./common.nix
+            "${nixbook}/common.nix"
           ];
           nix.extraOptions = "experimental-features = nix-command flakes";
           isoImage.isoName = "nixos-custom-installer.iso";
@@ -75,8 +81,8 @@
             copyNixbookHomeFiles = {
               text =
                 let
-                  config = ./config;
-                  guides = ./guides;
+                  config = nixbook + "/config/config";
+                  guides = nixbook + "/guides";
                 in
                 ''
                   # Without the install 0644, the .config and Desktop dirs are read-only
@@ -115,8 +121,8 @@
               # From https://github.com/pete3n/nix-offline-iso/blob/6dd16a6e9634d61788096d3b7f2c2ca07af40a2f/flake.nix#L53-L55
               isoImage.storeContents = [
                 ./default-configuration.nix
-                ./base.nix
-                ./base_lite.nix
+                "${nixbook}/base.nix"
+                "${nixbook}/base_lite.nix"
               ];
               isoImage.includeSystemBuildDependencies = true;
             }
