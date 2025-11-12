@@ -1,0 +1,30 @@
+name: Nix CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install Nix using Determinate Systems action
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v12
+
+      # Optional: Enable magic nix cache for faster builds
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      # Verify Nix is working
+      - name: Verify Nix installation
+        run: nix --version
+
+      # Build your flake (example target)
+      - name: Build default ISO
+        run: nix build .#packages.x86_64-linux.install-iso
