@@ -16,23 +16,10 @@ This method is much faster than creating an ISO because it can boot the VM witho
 nix run .#packages.x86_64-linux.vm
 ```
 
-## Instructions for creating the image
-There are two versions of the ISO, `standard` and `bundled`. 
-
-### `standard`
-This is similar to a NixOS installer. It has a live graphical session, but still downloads a lot of packages from the internet during installation. The output ISO size is ~3.7GB. This is ideal if you will only be installing Nixbook up to 3 times.
-
+## Instructions for creating the ISO
 Run 
 ```bash
-nix build .#packages.x86_64-linux.standardIso
+nix build .#packages.x86_64-linux.iso
 ```
-The ISO file will be in `/result/iso/`.
+The ISO file will be in `/result/iso/`. Its size will be ~3.4 GB.
 
-### `bundled`
-This includes everything in `standard`, plus it has most required Nix packages bundled in the ISO so that only a small amount (~150 MB) of data will need to be downloaded from the internet when installing Nixbook. The output ISO size is ~28GB. This is ideal if you will be installing Nixbook >3 times.
-
-Run 
-```bash
-nix build .#packages.x86_64-linux.bundledIso
-```
-The ISO file will be in `/result/iso/`.
