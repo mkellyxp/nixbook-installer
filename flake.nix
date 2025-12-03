@@ -2,13 +2,15 @@
   description = "Nixbook Live Session + Installer ISO with Cinnamon and Calamares";
 
   inputs = {
-    nixpkgs.url = "github:mkellyxp/nixpkgs?ref=pull/1/head";
+    nixpkgs.url = "github:mkellyxp/nixpkgs/nixos-25.11";
+    nixpkgsTesting.url = "github:mkellyxp/nixpkgs/testing";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs =
     {
       nixpkgs,
+      nixpkgsTesting,
       flake-utils,
       ...
     }:
@@ -26,7 +28,20 @@
               ];
           };
         };
-        installerConfiguration =
+
+        pkgsTesting = import nixpkgsTesting {
+          inherit system;
+          config = {
+            allowUnfree = true;
+            allowInsecurePredicate =
+              pkg:
+              builtins.elem (nixpkgs.lib.getName pkg) [
+                "broadcom-sta" # aka “wl”
+              ];
+          };
+        };
+
+        makeInstallerConfiguration = nixpkgs: pkgs:
           let
             nixbook = pkgs.fetchFromGitHub {
               owner = "ChocolateLoverRaj";
@@ -111,11 +126,18 @@
               }
             ];
           };
+
+
+        installerConfiguration = makeInstallerConfiguration nixpkgs pkgs;
+        installerConfigurationTesting = makeInstallerConfiguration nixpkgsTesting pkgsTesting;
+
       in
       {
         packages = {
           vm = installerConfiguration.config.system.build.vm;
+          vm-testing = installerConfigurationTesting.config.system.build.vm;
           iso = installerConfiguration.config.system.build.isoImage;
+          iso-testing = installerConfigurationTesting.config.system.build.isoImage;
         };
       }
     );
