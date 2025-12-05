@@ -2,14 +2,15 @@
   description = "Nixbook Live Session + Installer ISO with Cinnamon and Calamares";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:mkellyxp/nixpkgs/nixos-25.11";
+    nixpkgsTesting.url = "github:mkellyxp/nixpkgs/testing";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs =
     {
-      self,
       nixpkgs,
+      nixpkgsTesting,
       flake-utils,
       ...
     }:
@@ -26,19 +27,21 @@
                 "broadcom-sta" # aka “wl”
               ];
           };
-          overlays = [
-            (final: prev: {
-              calamares-nixos-extensions = prev.calamares-nixos-extensions.overrideAttrs (old: {
-                patches = [
-                  ./calamares-nixos-extensions/install-nixbook.patch
-                  ./calamares-nixos-extensions/update-desktop-entries.patch
-                  ./calamares-nixos-extensions/remove-unfree-screen.patch
-                ];
-              });
-            })
-          ];
         };
-        installerConfiguration =
+
+        pkgsTesting = import nixpkgsTesting {
+          inherit system;
+          config = {
+            allowUnfree = true;
+            allowInsecurePredicate =
+              pkg:
+              builtins.elem (nixpkgs.lib.getName pkg) [
+                "broadcom-sta" # aka “wl”
+              ];
+          };
+        };
+
+        makeInstallerConfiguration = nixpkgs: pkgs:
           let
             nixbook = pkgs.fetchFromGitHub {
               owner = "ChocolateLoverRaj";
@@ -55,8 +58,8 @@
               ./broadcom-sta.nix
               {
                 nix.extraOptions = "experimental-features = nix-command flakes";
-                isoImage.isoName = "nixos-custom-installer.iso";
-                system.stateVersion = "25.05";
+                image.fileName = "nixos-custom-installer.iso";
+                system.stateVersion = "25.11";
 
                 # Adapted from installation-cd-graphical-calamares-gnome.nix
                 isoImage.edition = "nixbook";
@@ -73,6 +76,9 @@
                   enable = true;
                   user = "nixos";
                 };
+
+                # Better VM Support
+                services.spice-vdagentd.enable = true;
 
                 # After installation, these packages will be installed through Flatpak and not NixOS
                 # But they are here to demo how Nixbook would be like after installing
@@ -120,11 +126,18 @@
               }
             ];
           };
+
+
+        installerConfiguration = makeInstallerConfiguration nixpkgs pkgs;
+        installerConfigurationTesting = makeInstallerConfiguration nixpkgsTesting pkgsTesting;
+
       in
       {
         packages = {
           vm = installerConfiguration.config.system.build.vm;
+          vm-testing = installerConfigurationTesting.config.system.build.vm;
           iso = installerConfiguration.config.system.build.isoImage;
+          iso-testing = installerConfigurationTesting.config.system.build.isoImage;
         };
       }
     );
