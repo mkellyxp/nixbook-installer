@@ -41,7 +41,8 @@
           };
         };
 
-        makeInstallerConfiguration = nixpkgs: pkgs:
+        makeInstallerConfiguration =
+          nixpkgs: pkgs:
           let
             nixbook = pkgs.fetchFromGitHub {
               owner = "ChocolateLoverRaj";
@@ -76,9 +77,6 @@
                   enable = true;
                   user = "nixos";
                 };
-
-                # Better VM Support
-                services.spice-vdagentd.enable = true;
 
                 # After installation, these packages will be installed through Flatpak and not NixOS
                 # But they are here to demo how Nixbook would be like after installing
@@ -126,7 +124,6 @@
               }
             ];
           };
-
 
         installerConfiguration = makeInstallerConfiguration nixpkgs pkgs;
         installerConfigurationTesting = makeInstallerConfiguration nixpkgsTesting pkgsTesting;
