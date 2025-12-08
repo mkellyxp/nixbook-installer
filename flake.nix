@@ -1,43 +1,141 @@
 {
-  description = "Custom NixOS Installer ISO with Calamares";
+  description = "Nixbook Live Session + Installer ISO with Cinnamon and Calamares";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:mkellyxp/nixpkgs/nixos-25.11";
+    nixpkgsTesting.url = "github:mkellyxp/nixpkgs/testing";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      nixpkgs,
+      nixpkgsTesting,
+      flake-utils,
+      ...
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = import nixpkgs {
           inherit system;
-          config.allowUnfree = true;
-          overlays = [
-            (final: prev: {
-              calamares-nixos-extensions = prev.calamares-nixos-extensions.overrideAttrs ( old: {
-                patches = [
-                  ./calamares-nixos-extensions/install-nixbook.patch
-                  ./calamares-nixos-extensions/update-desktop-entries.patch
-                  ./calamares-nixos-extensions/remove-unfree-screen.patch
+          config = {
+            allowUnfree = true;
+            allowInsecurePredicate =
+              pkg:
+              builtins.elem (nixpkgs.lib.getName pkg) [
+                "broadcom-sta" # aka “wl”
+              ];
+          };
+        };
+
+        pkgsTesting = import nixpkgsTesting {
+          inherit system;
+          config = {
+            allowUnfree = true;
+            allowInsecurePredicate =
+              pkg:
+              builtins.elem (nixpkgs.lib.getName pkg) [
+                "broadcom-sta" # aka “wl”
+              ];
+          };
+        };
+
+        makeInstallerConfiguration =
+          nixpkgs: pkgs:
+          let
+            nixbook = pkgs.fetchFromGitHub {
+              owner = "ChocolateLoverRaj";
+              repo = "nixbook";
+              rev = "262a3796b9ef2420b840f65b504794826b62a369";
+              hash = "sha256-Z0jlc8VImgc3L9P34j7/z1zMtfSJmRzGXQOU4Zg4jBA=";
+            };
+          in
+          nixpkgs.lib.nixosSystem {
+            inherit pkgs system;
+            modules = [
+              "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-graphical-calamares.nix"
+              "${nixbook}/common.nix"
+              ./broadcom-sta.nix
+              {
+                nix.extraOptions = "experimental-features = nix-command flakes";
+                image.fileName = "nixos-custom-installer.iso";
+                system.stateVersion = "25.11";
+
+                # Adapted from installation-cd-graphical-calamares-gnome.nix
+                isoImage.edition = "nixbook";
+                services.xserver.desktopManager.cinnamon.extraGSettingsOverrides = ''
+                  [org.cinnamon.desktop.session]
+                  idle-delay=0
+
+                  [org.cinnamon.settings-daemon.plugins.power]
+                  sleep-inactive-ac-type='nothing'
+                  sleep-inactive-battery-type='nothing'
+                '';
+
+                services.displayManager.autoLogin = {
+                  enable = true;
+                  user = "nixos";
+                };
+
+                # After installation, these packages will be installed through Flatpak and not NixOS
+                # But they are here to demo how Nixbook would be like after installing
+                environment.systemPackages = with pkgs; [
+                  google-chrome
+                  zoom
+                  libreoffice
                 ];
-              });
-            })
-          ];
-        };
+                # Copy Nixbook home files
+                system.userActivationScripts = {
+                  copyNixbookHomeFiles = {
+                    text =
+                      let
+                        config = nixbook + "/config/config";
+                        guides = nixbook + "/guides";
+                      in
+                      ''
+                        # Without the install 0644, the .config and Desktop dirs are read-only
+                        # I think this is because they get copied form the nix store, which is read-only
+                        cd ${config} && find . -type f -exec install -Dm 0644 "{}" "$HOME/.config/{}" \;
+                        mkdir -p $HOME/Desktop
+                        for f in "${guides}"/*; do
+                          ln -s "$f" "$HOME/Desktop/$(basename "$f")"
+                        done
+                      '';
+                  };
+                };
 
-        nixosConfiguration = nixpkgs.lib.nixosSystem {
-          inherit pkgs system;
-          modules = [
-            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-graphical-calamares-gnome.nix"
+                # Options that get used by system.build.vm
+                virtualisation.vmVariant.virtualisation = {
+                  # 4 cores are recommended for Nixbook
+                  cores = 4;
+                  # 4GB memory is recommended for Nixbook
+                  memorySize = 4096;
+                  # Don't persist any data
+                  diskImage = null;
+                };
 
-            {
-              nix.extraOptions = "experimental-features = nix-command flakes";
-              isoImage.isoName = "nixos-custom-installer.iso";
-              system.stateVersion = "25.05";
-            }
-          ];
+                # Bundle in nix derivations that may be used for Nixbook and Nixbook Lite
+                isoImage.storeContents = [
+                  ./default-configuration.nix
+                  "${nixbook}/base.nix"
+                  "${nixbook}/base_lite.nix"
+                ];
+              }
+            ];
+          };
+
+        installerConfiguration = makeInstallerConfiguration nixpkgs pkgs;
+        installerConfigurationTesting = makeInstallerConfiguration nixpkgsTesting pkgsTesting;
+
+      in
+      {
+        packages = {
+          vm = installerConfiguration.config.system.build.vm;
+          vm-testing = installerConfigurationTesting.config.system.build.vm;
+          iso = installerConfiguration.config.system.build.isoImage;
+          iso-testing = installerConfigurationTesting.config.system.build.isoImage;
         };
-      in {
-        packages.install-iso = nixosConfiguration.config.system.build.isoImage;
-      });
+      }
+    );
 }
