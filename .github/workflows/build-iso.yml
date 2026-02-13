@@ -23,7 +23,7 @@ jobs:
 
       # Build your flake (example target)
       - name: Build default ISO
-        run: nix build .#packages.x86_64-linux.install-iso
+        run: nix build .#packages.x86_64-linux.iso
 
       # Upload the built artifact
       - name: Upload default ISO
