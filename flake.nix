@@ -2,7 +2,7 @@
   description = "Nixbook Live Session + Installer ISO with Cinnamon and Calamares";
 
   inputs = {
-    nixpkgs.url = "github:mkellyxp/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:mkellyxp/nixpkgs/nixos-26.05";
     nixpkgsTesting.url = "github:mkellyxp/nixpkgs/testing";
     flake-utils.url = "github:numtide/flake-utils";
   };
