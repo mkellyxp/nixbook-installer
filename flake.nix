@@ -60,7 +60,7 @@
               {
                 nix.extraOptions = "experimental-features = nix-command flakes";
                 image.fileName = "nixos-custom-installer.iso";
-                system.stateVersion = "25.11";
+                system.stateVersion = "26.05";
 
                 # Adapted from installation-cd-graphical-calamares-gnome.nix
                 isoImage.edition = "nixbook";
