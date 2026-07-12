@@ -2,7 +2,7 @@
   description = "Nixbook Live Session + Installer ISO with Cinnamon and Calamares";
 
   inputs = {
-    nixpkgs.url = "github:mkellyxp/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:mkellyxp/nixpkgs/nixos-26.05";
     nixpkgsTesting.url = "github:mkellyxp/nixpkgs/testing";
     flake-utils.url = "github:numtide/flake-utils";
   };
@@ -60,7 +60,7 @@
               {
                 nix.extraOptions = "experimental-features = nix-command flakes";
                 image.fileName = "nixos-custom-installer.iso";
-                system.stateVersion = "25.11";
+                system.stateVersion = "26.05";
 
                 # Adapted from installation-cd-graphical-calamares-gnome.nix
                 isoImage.edition = "nixbook";
